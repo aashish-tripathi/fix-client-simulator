@@ -6,6 +6,7 @@ import service.FixOrderSimulator;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Objects;
 import java.util.Properties;
@@ -27,6 +28,11 @@ public class Application {
         }
         startInitiator();
 
+        startSimulator(configPath);
+
+    }
+
+    private static void startSimulator(String configPath) throws IOException {
         Properties properties = new Properties();
         InputStream inputStream = Application.class.getResourceAsStream(configPath);
         properties.load(inputStream);
@@ -38,7 +44,6 @@ public class Application {
         FixOrderSimulator orderSimulator = new FixOrderSimulator();
         //runManualMode(stocks, exchange, brokerName, brokerId, clientDetails, workers, orderSimulator);
         runAutomationMode(stocks, workers, orderSimulator);
-
     }
 
     private static void startInitiator() throws ConfigError, InterruptedException {
@@ -58,6 +63,18 @@ public class Application {
             Thread.sleep(1000);
         }
 
+    }
+
+    private static void runAutomationMode(String[] stocks, int workers, FixOrderSimulator orderSimulator) {
+        orderSimulator.startSimulatorInAutomaticMode(stocks, workers,new ArrayBlockingQueue<>(1024));
+        LOGGER.info("FIX Order Simulator has been started in automatic mode {}", LocalDate.now());
+        Scanner scanner = new Scanner(System.in);
+        LOGGER.warn("Enter to stop automatic mode...");
+        String run = scanner.nextLine();
+        while (run.isEmpty()) {
+            LOGGER.warn("Turning down application...");
+            orderSimulator.shutDown();
+        }
     }
 
     /*private static void runManualMode(String[] stocks, String exchange, String brokerName, String brokerId, String[] clientDetails, int workers, OrderSimulator orderSimulator) throws JMSException, InterruptedException {
@@ -121,16 +138,6 @@ public class Application {
         orderSimulator.shutDown();
     }*/
 
-    private static void runAutomationMode(String[] stocks, int workers, FixOrderSimulator orderSimulator) {
-        orderSimulator.startSimulatorInAutomaticMode(stocks, workers,new ArrayBlockingQueue<>(1024));
-        LOGGER.info("FIX Order Simulator has been started in automatic mode {}", Calendar.getInstance().getTime());
-        Scanner scanner = new Scanner(System.in);
-        LOGGER.warn("Enter to stop automatic mode...");
-        String run = scanner.nextLine();
-        while (run.isEmpty()) {
-            LOGGER.warn("Turning down application...");
-            orderSimulator.shutDown();
-        }
-    }
+
 
 }

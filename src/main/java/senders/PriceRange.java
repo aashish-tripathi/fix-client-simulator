@@ -1,13 +1,13 @@
 package senders;
 
-import util.Utility;
-
+import java.text.DecimalFormat;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class PriceRange {
 
+    public static DecimalFormat dataFormat = new DecimalFormat("####.#");
     private ConcurrentMap<String,Circuit> stockCircuit;
     private static PriceRange priceRange = new PriceRange();
 
@@ -23,7 +23,7 @@ public class PriceRange {
      if(!stockCircuit.containsKey(symbol)){
          ThreadLocalRandom random = ThreadLocalRandom.current();
          double price =  random.nextDouble(10, 100);
-         price =Double.valueOf(Utility.dataFormat.format(price));
+         price =Double.valueOf(dataFormat.format(price));
          stockCircuit.put(symbol, new Circuit(price, price-5,price+5));
      }
         return stockCircuit.get(symbol);
@@ -47,24 +47,12 @@ public class PriceRange {
             this.upperCircuit = upperCircuit;
         }
 
-        public void setPriceRange(double priceRange) {
-            this.priceRange = priceRange;
-        }
-
         public double getLowerCircuit() {
             return lowerCircuit;
         }
 
-        public void setLowerCircuit(double lowerCircuit) {
-            this.lowerCircuit = lowerCircuit;
-        }
-
         public double getUpperCircuit() {
             return upperCircuit;
-        }
-
-        public void setUpperCircuit(double upperCircuit) {
-            this.upperCircuit = upperCircuit;
         }
 
         @Override

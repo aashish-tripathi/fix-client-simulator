@@ -12,10 +12,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class FixOrderSimulator {
-    private String[] symbols;
     private ExecutorService service;
     private List<OrderSender> workerThreads;
-    //private Throughput throughputWorker;
     private static final Logger LOGGER = LoggerFactory.getLogger(FixOrderSimulator.class);
 
     public FixOrderSimulator() {
@@ -26,8 +24,8 @@ public class FixOrderSimulator {
     public void startSimulatorInAutomaticMode(final String[] symbols, int workers,
                                               BlockingQueue<Message> inputQueue) {
         for (int i = 0; i < workers; i++) {
-            OrderSender senderEMS = new OrderSender(symbols, inputQueue);
-            workerThreads.add(senderEMS);
+            OrderSender orderSender = new OrderSender(symbols, inputQueue);
+            workerThreads.add(orderSender);
         }
         workerThreads.forEach(t -> service.submit(t));
     }
