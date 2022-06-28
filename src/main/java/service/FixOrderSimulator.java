@@ -3,7 +3,6 @@ package service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import quickfix.Message;
-import quickfix.SessionID;
 import senders.OrderSender;
 
 import java.util.ArrayList;
@@ -20,16 +19,14 @@ public class FixOrderSimulator {
     private static final Logger LOGGER = LoggerFactory.getLogger(FixOrderSimulator.class);
 
     public FixOrderSimulator() {
-
+        workerThreads = new ArrayList<>();
         this.service = Executors.newFixedThreadPool(10, r -> new Thread(r, "Fix Order Sending Thread"));
     }
 
-    public void startSimulatorInAutomaticMode(final String[] symbols,
-                                              final String clientId, final String clientName,
-                                              int workers, BlockingQueue<Message> inputQueue) {
-        workerThreads = new ArrayList<>();
+    public void startSimulatorInAutomaticMode(final String[] symbols, int workers,
+                                              BlockingQueue<Message> inputQueue) {
         for (int i = 0; i < workers; i++) {
-            OrderSender senderEMS = new OrderSender(symbols, clientId, clientName, inputQueue);
+            OrderSender senderEMS = new OrderSender(symbols, inputQueue);
             workerThreads.add(senderEMS);
         }
         workerThreads.forEach(t -> service.submit(t));

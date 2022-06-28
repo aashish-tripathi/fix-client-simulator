@@ -1,16 +1,17 @@
+import fix.FixOrderInitiator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import quickfix.*;
-import fix.FixOrderInitiator;
 import service.FixOrderSimulator;
-
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.function.Supplier;
 
 public class Application {
 
@@ -20,12 +21,30 @@ public class Application {
         String configPath;
         if (args.length == 0) {
             LOGGER.warn("Config file not provided, loading file from default directory");
-            configPath = "/fix-ord-sim.properties";
+            configPath = "fix-ord-sim.properties";
         } else {
             configPath = args[0];
         }
+        startInitiator();
 
-        SessionSettings settings = new SessionSettings("initiator.properties");
+        Properties properties = new Properties();
+        InputStream inputStream = Application.class.getResourceAsStream(configPath);
+        properties.load(inputStream);
+
+        String[] stocks = properties.getProperty("exsim.order.sim.symbols").split(",");
+        int workers = Integer.parseInt(properties.getProperty("exsim.order.sim.workers"));
+        String runningMode = properties.getProperty("exsim.running.mode");
+
+        FixOrderSimulator orderSimulator = new FixOrderSimulator();
+        //runManualMode(stocks, exchange, brokerName, brokerId, clientDetails, workers, orderSimulator);
+        runAutomationMode(stocks, workers, orderSimulator);
+
+    }
+
+    private static void startInitiator() throws ConfigError, InterruptedException {
+        InputStream inputStream = Application.class.getResourceAsStream("initiator.properties");
+        Objects.requireNonNull(inputStream);
+        SessionSettings settings = new SessionSettings(inputStream);
 
         FixOrderInitiator application = new FixOrderInitiator();
         MessageStoreFactory messageStoreFactory = new FileStoreFactory(settings);
@@ -38,19 +57,6 @@ public class Application {
         while (FixOrderInitiator.sessionID == null) {
             Thread.sleep(1000);
         }
-
-        Properties properties = new Properties();
-        InputStream inputStream = Application.class.getResourceAsStream(configPath);
-        properties.load(inputStream);
-        String[] clients = properties.getProperty("exsim.order.sim.clients").split(",");
-        String[] stocks = properties.getProperty("exsim.order.sim.symbols").split(",");
-        String[] clientDetails = clients[0].split("-");
-        int workers = Integer.parseInt(properties.getProperty("exsim.order.sim.workers"));
-        String runningMode = properties.getProperty("exsim.running.mode");
-
-        FixOrderSimulator orderSimulator = new FixOrderSimulator();
-        //runManualMode(stocks, exchange, brokerName, brokerId, clientDetails, workers, orderSimulator);
-        runAutomationMode(stocks, clientDetails, workers, orderSimulator);
 
     }
 
@@ -115,8 +121,8 @@ public class Application {
         orderSimulator.shutDown();
     }*/
 
-    private static void runAutomationMode(String[] stocks, String[] clientDetails, int workers, FixOrderSimulator orderSimulator) {
-        orderSimulator.startSimulatorInAutomaticMode(stocks, clientDetails[0], clientDetails[1], workers,new ArrayBlockingQueue<>(1024));
+    private static void runAutomationMode(String[] stocks, int workers, FixOrderSimulator orderSimulator) {
+        orderSimulator.startSimulatorInAutomaticMode(stocks, workers,new ArrayBlockingQueue<>(1024));
         LOGGER.info("FIX Order Simulator has been started in automatic mode {}", Calendar.getInstance().getTime());
         Scanner scanner = new Scanner(System.in);
         LOGGER.warn("Enter to stop automatic mode...");
