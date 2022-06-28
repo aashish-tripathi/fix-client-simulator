@@ -4,11 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import quickfix.Message;
 import quickfix.field.*;
-import util.Utility;
 
+import java.text.DecimalFormat;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class FIXOrderCreator {
+
+    public static DecimalFormat dataFormat = new DecimalFormat("####.#");
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FIXOrderCreator.class);
     private static PriceRange priceRange = PriceRange.getInstance();
@@ -18,12 +20,12 @@ public class FIXOrderCreator {
         ThreadLocalRandom random = ThreadLocalRandom.current();
         PriceRange.Circuit circuit = priceRange.getTodaysSymbolCircuit(symbol);
         double price = circuit.getPriceRange();
-        final double sendingPrice =Double.valueOf(Utility.dataFormat.format(random.nextDouble(price, price + 5)));
+        final double sendingPrice =Double.valueOf(dataFormat.format(random.nextDouble(price, price + 5)));
         double lowerCircuit = circuit.getLowerCircuit();
         double upperCircuit = circuit.getUpperCircuit();
         Message message = new Message();
         if (sendingPrice >= lowerCircuit && sendingPrice <= upperCircuit && spreadValidity(sendingPrice)) {
-            message.getHeader().setField(new MsgType("D"));
+            message.getHeader().setField(new MsgType(MsgType.ORDER_SINGLE));
             message.setField(new Account("Ashish"));
             message.setField(new AvgPx(45.3));
             message.setField(new CumQty(45.3));
@@ -37,7 +39,7 @@ public class FIXOrderCreator {
             message.setField(new OrderID("a100"));
             message.setField(new OrderQty(100L));
             message.setField(new OrdStatus(OrdStatus.NEW));
-            message.setField(new OrdType(OrdStatus.NEW));
+            message.setField(new OrdType(OrdType.LIMIT));
             message.setField(new Side(Side.BUY));
             message.setField(new Symbol(symbol));
             message.setField(new ClientID("TESTClient"));
